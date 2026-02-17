@@ -28,7 +28,7 @@ classdef TrajectoryPlanner < handle
     
     methods
 
-        %% Constructor
+        % Constructor
         % Initializes the trajectory planner with predefined waypoints, hover times,
         % and segment durations. Computes quintic polynomial coefficients for each segment.
         function obj = TrajectoryPlanner()
@@ -80,7 +80,7 @@ classdef TrajectoryPlanner < handle
             end
         end
         
-        %% Get reference at time t
+        % Get reference at time t
         % Returns the desired position, velocity, and acceleration vectors
         % at the given simulation time t.
         %
@@ -130,13 +130,13 @@ classdef TrajectoryPlanner < handle
             Ad = [0;0;0];
         end
         
-        %% Get final position
+        % Get final position
         % Returns the last waypoint position as a column vector.
         function Xf = getFinalPosition(obj)
             Xf = obj.X_final;
         end
         
-        %% Get hover time for a given waypoint index
+        % Get hover time for a given waypoint index
         % Returns the hover duration (seconds) for the waypoint at the specified index.
         % Used by the main simulation to determine how long to pause at that waypoint.
         function t_hover = getHoverTime(obj, index)
@@ -144,4 +144,5 @@ classdef TrajectoryPlanner < handle
         end
         
     end
+
 end
