@@ -18,18 +18,20 @@ The simulation is designed as an educational tool to understand quadcopter dynam
 
 The control system follows a standard cascaded structure:
 
+```mermaid
 graph LR
     A[Trajectory Planner] -->|"(X,Y,Z)_cmd"| B[Position Controller]
-    B -->|u1(Tz)| C[Attitude Controller]
-    B -->|"(ϕ, ψ, θ)_cmd"| C
-    C -->|u2, u3, u4| D[Plant (Quadcopter)]
-    D -->|y1, Sensor measurements| B
-    D -->|y1, Sensor measurements| C
+    B -->|u₁(Tz)| C[Attitude Controller]
+    B -->|"(φ, ψ, θ)_cmd"| C
+    C -->|u₂, u₃, u₄| D[Plant (Quadcopter)]
+    D -->|y₁, Sensor measurements| B
+    D -->|y₁, Sensor measurements| C
 
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style B fill:#bbf,stroke:#333,stroke-width:2px
     style C fill:#bbf,stroke:#333,stroke-width:2px
     style D fill:#bfb,stroke:#333,stroke-width:2px
+```
 
 ## Control Architecture
 
