@@ -40,7 +40,7 @@ The relationship between total thrust $T_\Sigma$, moments $[M_1, M_2, M_3]$ (rol
 - `main.m` – Main simulation script; sets up parameters, runs the loop, and visualizes results.
 - `Drone.m` – Class defining the quadcopter model, controllers, and motor mixing.
 - `TrajectoryPlanner.m` – Class for generating quintic polynomial trajectories through waypoints.
-- `RPY2Rot.m` – Converts roll‑pitch‑yaw angles to a rotation matrix (inertial → body).
+- `RPY2Rot.m` – Converts roll‑pitch‑yaw angles to a rotation matrix (inertial to body).
 - `poly5_segment.m` – Computes coefficients for a quintic polynomial segment with zero velocity/acceleration at ends.
 - `Clip.m` – Utility function to clamp values within bounds.
 - `WaypointConstraints.m` – (Optional) Checks if a position is inside a rectangular waypoint region.
