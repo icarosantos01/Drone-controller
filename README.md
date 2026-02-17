@@ -33,46 +33,7 @@ For an **X-configured** quadcopter, motors are placed at the corners of a square
 * **Coefficients:** $k_T$ (thrust) and $k_Q$ (torque).
 
 ### Thrust and Moments Matrix
-The relationship between total thrust $T_\Sigma$, moments $[M_1, M_2, M_3]$ (roll, pitch, yaw), and squared motor speeds $\Omega_i^2$ is:
-
-$$
-\begin{bmatrix}
-T_\Sigma \\ M_1 \\ M_2 \\ M_3
-\end{bmatrix}
-=
-\begin{bmatrix}
-k_T & k_T & k_T & k_T \\
--k_T d & k_T d & k_T d & -k_T d \\
-k_T d & k_T d & -k_T d & -k_T d \\
-k_Q & -k_Q & k_Q & -k_Q
-\end{bmatrix}
-\begin{bmatrix}
-\Omega_1^2 \\ \Omega_2^2 \\ \Omega_3^2 \\ \Omega_4^2
-\end{bmatrix}
-$$
-
-> **Motor Mapping:** 1: Front-Right, 2: Front-Left, 3: Rear-Left, 4: Rear-Right.
-
-### Control Implementation
-In simulation, the matrix is inverted to solve for the required motor speeds:
-
-$$
-\begin{bmatrix}
-\Omega_1^2 \\ \Omega_2^2 \\ \Omega_3^2 \\ \Omega_4^2
-\end{bmatrix}
-=
-\begin{bmatrix}
-k_T & k_T & k_T & k_T \\
--k_T d & k_T d & k_T d & -k_T d \\
-k_T d & k_T d & -k_T d & -k_T d \\
-k_Q & -k_Q & k_Q & -k_Q
-\end{bmatrix}^{-1}
-\begin{bmatrix}
-T_\Sigma \\ M_1 \\ M_2 \\ M_3
-\end{bmatrix}
-$$
-
-The resulting $\Omega_i^2$ values are saturated between $0$ and $\Omega_{\max}^2$, and the final speeds $\Omega_i$ are obtained by taking the square root.
+The relationship between total thrust $T_\Sigma$, moments $[M_1, M_2, M_3]$ (roll, pitch, yaw), and squared motor speeds $\Omega_i^2$.
 
 ## File Structure
 
