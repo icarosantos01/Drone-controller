@@ -24,50 +24,6 @@ The control system follows a standard cascaded structure:
 - **Motor Mixing**: Solves for the squared motor speeds from the thrust and moments, saturates them, and calculates the actual RPM.
 - **Plant** (`Drone.m`): Integrates the 6‑DOF equations of motion to update the drone’s state.
 
-# Drone Model & Dynamics
-
-## 🚁 Drone Model
-
-The quadcopter is modeled as a rigid body with mass $m$ and inertia matrix $\text{diag}(I_{xx}, I_{yy}, I_{zz})$. The state vector is defined as:
-
-$$
-\mathbf{x} = [x, y, z, \dot{x}, \dot{y}, \dot{z}, \phi, \theta, \psi, p, q, r]^T
-$$
-
-### Translational Dynamics
-
-The acceleration in the inertial frame is given by:
-
-$$
-m \ddot{\mathbf{r}} = m g \mathbf{e}_3 + \mathbf{R} \cdot T_\Sigma \cdot (-\mathbf{e}_3)
-$$
-
-Where:
-* **$\mathbf{R}$**: Rotation matrix from body to inertial frame.
-* **$T_\Sigma$**: Total thrust produced by the motors.
-
-### Rotational Dynamics
-
-The evolution of the Euler angles ($\phi, \theta, \psi$) and angular velocities ($p, q, r$) are:
-
-$$
-\begin{aligned}
-\dot{\phi} &= p + q \sin\phi \tan\theta + r \cos\phi \tan\theta \\
-\dot{\theta} &= q \cos\phi - r \sin\phi \\
-\dot{\psi} &= q \sin\phi \sec\theta + r \cos\phi \sec\theta
-\end{aligned}
-$$
-
-$$
-\begin{aligned}
-\dot{p} &= \frac{I_{yy}-I_{zz}}{I_{xx}} q r + \frac{1}{I_{xx}} M_1 \\
-\dot{q} &= \frac{I_{zz}-I_{xx}}{I_{yy}} r p + \frac{1}{I_{yy}} M_2 \\
-\dot{r} &= \frac{I_{xx}-I_{yy}}{I_{zz}} p q + \frac{1}{I_{zz}} M_3
-\end{aligned}
-$$
-
----
-
 ## ⚙️ Motor Mixing (X-Configuration)
 
 For an **X-configured** quadcopter, motors are placed at the corners of a square rotated by 45° relative to the body axes. 
@@ -75,8 +31,6 @@ For an **X-configured** quadcopter, motors are placed at the corners of a square
 * **Arm length ($l$):** Distance from center to motor.
 * **Projected distance ($d$):** $d = l / \sqrt{2}$.
 * **Coefficients:** $k_T$ (thrust) and $k_Q$ (torque).
-
-
 
 ### Thrust and Moments Matrix
 The relationship between total thrust $T_\Sigma$, moments $[M_1, M_2, M_3]$ (roll, pitch, yaw), and squared motor speeds $\Omega_i^2$ is:
