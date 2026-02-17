@@ -1,4 +1,4 @@
-# Quadcopter Simulation with Attitude and Position Control (X‑Configuration)
+# Quadcopter Simulation with Attitude and Position Control and Trajectory Planning (X‑Configuration)
 
 This repository contains a complete MATLAB simulation of a quadcopter in **X‑configuration**. The simulation includes a nonlinear 6‑DOF dynamic model, cascaded PID controllers for attitude and position, a quintic polynomial trajectory planner, motor mixing for X‑config, and real‑time 3D visualization.
 
@@ -13,6 +13,14 @@ The simulation is designed as an educational tool to understand quadcopter dynam
 - **X‑Configuration Motor Mixing**: Correct mapping from control commands (thrust and moments) to individual motor speeds.
 - **Real‑time Visualization**: 3D animation of the drone and live plots of attitude, position, and motor RPM.
 - **Modular Code**: Object‑oriented design (`Drone`, `TrajectoryPlanner`) for easy modification and extension.
+
+## Control Architecture
+
+The control system follows a standard cascaded structure:
+
+Trajectory Planner → Position Controller → Attitude Controller → Motor Mixing → Plant
+                        ↑                       ↑                     ↑
+                        └─── feedback ──────────┴─── feedback ───────┘
 
 ## Control Architecture
 
