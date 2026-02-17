@@ -18,25 +18,6 @@ The simulation is designed as an educational tool to understand quadcopter dynam
 
 The control system follows a standard cascaded structure:
 
-```mermaid
-graph LR
-    A[Trajectory Planner] -->|"(X,Y,Z)_cmd"| B[Position Controller]
-    B -->|"u1(Tz)"| C[Attitude Controller]
-    B -->|"(phi, psi, theta)_cmd"| C
-    C -->|"u2, u3, u4"| D[Plant (Quadcopter)]
-    D -->|"y1, Sensor measurements"| B
-    D -->|"y1, Sensor measurements"| C
-
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#bbf,stroke:#333,stroke-width:2px
-    style D fill:#bfb,stroke:#333,stroke-width:2px
-```
-
-## Control Architecture
-
-The control system follows a standard cascaded structure:
-
 - **Trajectory Planner** (`TrajectoryPlanner.m`): Generates reference position, velocity, and acceleration at each time step from a set of waypoints.
 - **Position Controller** (outer loop): Computes desired roll, pitch, and vertical velocity from the position error using a PID + feedforward law.
 - **Attitude Controller** (inner loop): Tracks desired angles and vertical velocity using independent PID controllers, producing the required total thrust and moments.
