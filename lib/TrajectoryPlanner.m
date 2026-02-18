@@ -54,7 +54,7 @@ classdef TrajectoryPlanner < handle
             % Number of segments = number of waypoints minus one
             obj.numSegments = size(obj.waypoints,1) - 1;
             
-            % Equal duration for all segments (can be customized per segment)
+            % Equal duration for all segments
             Tseg = 5;  % seconds per segment
             obj.segmentTimes = Tseg * ones(obj.numSegments,1);
             
@@ -146,3 +146,4 @@ classdef TrajectoryPlanner < handle
     end
 
 end
+
