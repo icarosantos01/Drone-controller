@@ -11,7 +11,7 @@
 %   See also: RPY2Rot, Clip
 
 classdef Drone < handle
-    %% MEMBERS
+    % MEMBERS
     properties
         % Simulation parameters
         g           % Gravity acceleration [m/s^2] (positive, assumed 9.81)
@@ -106,9 +106,9 @@ classdef Drone < handle
         Omega     % Current motor speeds [omega1; omega2; omega3; omega4] [rad/s]
     end
     
-    %% METHODS
+    % METHODS
     methods
-        %% INITIALIZER
+        % INITIALIZER
         % Constructor for Drone class.
         % Inputs:
         %   params     - containers.Map with keys: 'mass','armLength','Ixx','Iyy','Izz','kT','kQ','maxOmega'
@@ -198,7 +198,7 @@ classdef Drone < handle
             obj.Omega    = zeros(4,1);
         end
         
-        %% RETURNS DRONE STATE
+        % RETURNS DRONE STATE
         % Returns the current full state vector.
         % Output:
         %   state - 12x1 vector [x y z dx dy dz phi theta psi p q r]'
@@ -206,7 +206,7 @@ classdef Drone < handle
             state = obj.x;
         end
         
-        %% STATE SPACE (DIFFERENTIAL) EQUATIONS
+        % STATE SPACE (DIFFERENTIAL) EQUATIONS
         % Evaluates the time derivatives of the state vector based on current state and inputs.
         % This method implements the 6-DOF rigid body dynamics of a quadcopter.
         % It updates obj.dx, which is then used by UpdateState for Euler integration.
@@ -244,7 +244,7 @@ classdef Drone < handle
             obj.dx(10:12) = (obj.I) \ (obj.M - cross(obj.w, obj.I * obj.w));
         end
         
-        %% PREDICT NEXT DRONE STATE
+        % PREDICT NEXT DRONE STATE
         % Advances the simulation by one time step using Euler integration.
         % Calls EvalEOM to compute derivatives, then updates state.
         function obj = UpdateState(obj)
@@ -262,7 +262,7 @@ classdef Drone < handle
             obj.w     = obj.x(10:12);
         end
         
-        %% CONTROLLER
+        % CONTROLLER
         % Attitude and vertical speed controller.
         % Input:
         %   refSig - 4x1 reference signal [phi_des; theta_des; psi_des; zdot_des]
@@ -309,18 +309,30 @@ classdef Drone < handle
             obj.psi_err_prev = obj.psi_err;
             obj.psi_err_sum  = obj.psi_err_sum + obj.psi_err;
             
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Total thrust calculation (simplified: uses vertical velocity PID)
-            % This assumes that the vertical acceleration is directly controlled by thrust.
-            % The basic thrust is set to hover (m*g) plus correction from vertical velocity error.
-            obj.u(1) = obj.m * obj.g - ...
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Total thrust calculation with tilt compensation
+            % As the drone tilts (Roll/Pitch) to move horizontally, the vertical 
+            % component of the thrust vector decreases. To prevent the drone from 
+            % losing altitude during aggressive maneuvers (like your 2s segments), 
+            % we divide the hover thrust (m*g) by the cosine of the tilt angles.
+            % The 'max(..., 0.5)' is a safety guard to prevent division by zero
+            % or infinite thrust if the drone flips over.
+            thrust_base = (obj.m * obj.g) / (max(cos(obj.euler(1))*cos(obj.euler(2)), 0.5));
+            
+            % We add the PID correction based on vertical velocity error (zdot).
+            % Note: In this model's NED-like convention, a negative Z result 
+            % usually implies upward movement, so the signs must match your 
+            % specific coordinate frame.
+            obj.u(1) = thrust_base - ...
                        (obj.kP_zdot * obj.zdot_err + ...
                         obj.kI_zdot * (obj.zdot_err_sum) + ...
                         obj.kD_zdot * (obj.zdot_err - obj.zdot_err_prev)/obj.dt);
-
+            
+            % Store the current error for the derivative term and accumulate 
+            % the integral sum for the next time step.
             obj.zdot_err_prev = obj.zdot_err;
             obj.zdot_err_sum  = obj.zdot_err_sum + obj.zdot_err;
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Alternative thrust commands (commented out) for testing.
             % obj.u(1) = 0.0;
             % obj.u(1) = obj.m * obj.g;  % Initial pose for hover
@@ -334,7 +346,7 @@ classdef Drone < handle
             obj.MotorMixing();  % Convert control commands to motor speeds
         end
         
-        %% MOTOR MIXING
+        % MOTOR MIXING
         % Computes individual motor speeds from total thrust and moments.
         % Uses a mixing matrix for an X‑configuration quadcopter.
         % Motors 1..4 are arranged as: FR, FL, RL, RR (Front-Right, Front-Left, Rear-Left, Rear-Right)
@@ -370,7 +382,7 @@ classdef Drone < handle
             %     obj.Omega(4) * obj.RPS2RPM);
         end
         
-        %% POSITION CONTROLLER
+        % POSITION CONTROLLER
         % Outer loop position controller that computes desired attitude and vertical velocity
         % based on position, velocity, and acceleration references.
         % Inputs:
@@ -400,8 +412,12 @@ classdef Drone < handle
                     obj.kD_pos .* dr_err + ...
                     Ad;
             
-            % Saturate acceleration command to avoid extreme angles
-            a_max = 5; % m/s^2
+            % ------------------------------------------------------------
+            % PHYSICAL LIMITS & SATURATION
+            % ------------------------------------------------------------
+            % These limits must be high enough to support the accelerations
+            % requested by the TrajectoryPlanner (Tseg).
+            a_max = 12.0; % Max commanded acceleration [m/s^2]
             a_cmd = Clip(a_cmd, -a_max, a_max);
         
             % Map horizontal acceleration to desired roll/pitch (small angle approximation)
@@ -412,7 +428,7 @@ classdef Drone < handle
             obj.zdot_des = Vd(3) + obj.kP_pos(3) * obj.r_err(3);
         
             % Saturation of attitude commands
-            maxAngle = 20 * pi/180;
+            maxAngle = 45 * pi/180;  % Max allowed tilt [rad] (e.g., 45 deg)
             obj.phi_des   = Clip(obj.phi_des,   -maxAngle, maxAngle);
             obj.theta_des = Clip(obj.theta_des, -maxAngle, maxAngle);
         
