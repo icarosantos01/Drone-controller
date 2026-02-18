@@ -46,7 +46,7 @@ classdef TrajectoryPlanner < handle
             % DEFINE HOVER TIME FOR EACH WAYPOINT
             % (0 = no hover, duration in seconds)
             % ==============================
-            obj.hoverTime = [0; 0; 5];
+            obj.hoverTime = [0; 0; 10];
             
             % Store final position for quick access
             obj.X_final = obj.waypoints(end,:)';
@@ -159,3 +159,4 @@ classdef TrajectoryPlanner < handle
         
     end
 end
+
