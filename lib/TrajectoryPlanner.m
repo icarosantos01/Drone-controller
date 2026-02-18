@@ -54,8 +54,22 @@ classdef TrajectoryPlanner < handle
             % Number of segments = number of waypoints minus one
             obj.numSegments = size(obj.waypoints,1) - 1;
             
-            % Equal duration for all segments
-            Tseg = 5;  % seconds per segment
+            % ============================================================
+            % TRAJECTORY TIMING CONFIGURATION
+            % ============================================================
+            % Tseg defines the duration (in seconds) for each flight segment.
+            %
+            % IMPORTANT: Lowering Tseg (e.g., to 2s) increases required 
+            % acceleration and tilt angles. If you change this to a low value,
+            % you MUST check/update the following in Drone.m:
+            %   1. increase 'a_max' (e.g., 12.0)
+            %   2. increase 'maxAngle' (e.g., 45 degrees)
+            %   3. ensure 'thrust_base' tilt compensation is active.
+            %
+            % A value of 5s-6s provides a smoother, more stable trajectory.
+            Tseg = 6;  % seconds per segment
+
+            % Assign the same duration to all segments in the mission
             obj.segmentTimes = Tseg * ones(obj.numSegments,1);
             
             % Pre‑allocate cell array for coefficients
@@ -144,6 +158,4 @@ classdef TrajectoryPlanner < handle
         end
         
     end
-
 end
-
