@@ -1,4 +1,4 @@
-%% ============================================================
+% ============================================================
 %  QUADCOPTER SIMULATION
 %  Attitude control: roll, pitch, yaw, vertical speed
 %  Position control: x, y, z
@@ -11,7 +11,7 @@ clear;
 
 addpath('./lib')   % Add library folder to MATLAB path
 
-%% ============================================================
+% ============================================================
 % CONSTANTS
 % ============================================================
 
@@ -20,7 +20,7 @@ D2R = pi/180;      % Degrees to radians conversion factor
 dt  = 0.01;        % Simulation time step [s] (fixed-step integration)
 RPS2RPM = 30/pi;   % Conversion from rad/s to RPM (revolutions per minute)
 
-%% ============================================================
+% ============================================================
 % DRONE PARAMETERS
 % ============================================================
 
@@ -30,7 +30,7 @@ drone1_params = containers.Map( ...
     {1.25, 0.225, 0.00605922, 0.00605922, 0.0121184, ...
      1.22e-5, 2.19e-7, 1047.1975512});
 
-%% ============================================================
+% ============================================================
 % INITIAL STATE
 % ============================================================
 
@@ -45,7 +45,7 @@ drone1_initStates = [ 0, 0, 0, ...       % Position [x, y, z]
 % Initial control inputs [T, Mx, My, Mz]' (thrust and moments)
 drone1_initInputs = [0, 0, 0, 0]';
 
-%% ============================================================
+% ============================================================
 % DRONE GEOMETRY — X CONFIGURATION
 % ============================================================
 
@@ -62,7 +62,7 @@ drone1_body = [ ...
      0,  0,     0, 1;    % Center of mass
      0,  0, -0.05, 1]';  % Payload
 
-%% ============================================================
+% ============================================================
 % CONTROLLER GAINS
 % ============================================================
 
@@ -81,7 +81,7 @@ drone1_gains = containers.Map( ...
      10.0, 0.11, 0.0, ... % Vertical speed PID
      [1.5; 1.5; 2.5], [0.008; 0.008; 0.08], [3.5; 3.5; 1.5] });  % P_pos [x, y, z], I_pos [x, y, z], D_pos [x, y, z]
 
-%% ============================================================
+% ============================================================
 % Trajectory Planner
 % ============================================================
 
@@ -94,7 +94,7 @@ currentWP = 2;                  % Index of the current target waypoint (start fr
 wpReached = false(numWP,1);     % Logical array marking which waypoints have been reached
 wpHoverTimer = 0;               % Timer for hovering at waypoints that require a stop
 
-%% ============================================================
+% ============================================================
 % SIMULATION SETUP
 % ============================================================
 
@@ -109,7 +109,7 @@ i = 1;                        % Loop counter
 drone1 = Drone(drone1_params, drone1_initStates, ...
                drone1_initInputs, drone1_gains, simulationTime);
 
-%% ============================================================
+% ============================================================
 % 3D VISUALIZATION SETUP
 % ============================================================
 
@@ -149,7 +149,7 @@ hpl = plot3(drone1_atti(1,[5 6]), drone1_atti(2,[5 6]), drone1_atti(3,[5 6]), '-
 hsh = plot3(0,0,0,'xk','LineWidth',2);
 hold off;
 
-%% ============================================================
+% ============================================================
 % PLOTS (REFERENCE VS REAL)
 % ============================================================
 
@@ -193,7 +193,7 @@ ylabel('Height [m]');
 h_z     = animatedline('Color','b','LineWidth',1.5);
 h_z_ref = animatedline('Color','k','LineStyle','--','LineWidth',1.2);
 
-%% ============================================================
+% ============================================================
 % MOTOR SPEED PLOTS (RPM)
 % ============================================================
 fig3 = figure('Position',[705 50 810 245], 'Name', 'Motor Speeds');
@@ -206,13 +206,13 @@ h_m3 = animatedline('Color',[0,0.5,0],'LineWidth',1.5,'DisplayName','M3 (RL)'); 
 h_m4 = animatedline('Color','m','LineWidth',1.5,'DisplayName','M4 (RR)');        % Motor 4 (Rear‑Right)
 legend('Location','eastoutside');
 
-%% ============================================================
+% ============================================================
 % POSITION COMMAND (REFERENCE)
 % ============================================================
 
 commandSig = [0; 0; 0; 0];  % Initialize the variable to avoid plot errors (will be overwritten each loop)
 
-%% ============================================================
+% ============================================================
 % MAIN LOOP
 % ============================================================
 
@@ -414,3 +414,4 @@ end
 
 % Trim the state output to the actual number of steps simulated
 drone1_state_out = drone1_state_out(1:i-1,:);
+
