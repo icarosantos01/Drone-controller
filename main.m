@@ -1,4 +1,4 @@
-%% ============================================================
+% ============================================================
 %  QUADCOPTER SIMULATION
 %  Attitude control: roll, pitch, yaw, vertical speed
 %  Position control: x, y, z
@@ -11,7 +11,7 @@ clear;
 
 addpath('./lib')   % Add library folder to MATLAB path
 
-%% ============================================================
+% ============================================================
 % CONSTANTS
 % ============================================================
 
@@ -20,7 +20,7 @@ D2R = pi/180;      % Degrees to radians conversion factor
 dt  = 0.01;        % Simulation time step [s] (fixed-step integration)
 RPS2RPM = 30/pi;   % Conversion from rad/s to RPM (revolutions per minute)
 
-%% ============================================================
+% ============================================================
 % DRONE PARAMETERS
 % ============================================================
 
@@ -30,7 +30,7 @@ drone1_params = containers.Map( ...
     {1.25, 0.225, 0.00605922, 0.00605922, 0.0121184, ...
      1.22e-5, 2.19e-7, 1047.1975512});
 
-%% ============================================================
+% ============================================================
 % INITIAL STATE
 % ============================================================
 
@@ -45,7 +45,7 @@ drone1_initStates = [ 0, 0, 0, ...       % Position [x, y, z]
 % Initial control inputs [T, Mx, My, Mz]' (thrust and moments)
 drone1_initInputs = [0, 0, 0, 0]';
 
-%% ============================================================
+% ============================================================
 % DRONE GEOMETRY — X CONFIGURATION
 % ============================================================
 
@@ -62,7 +62,7 @@ drone1_body = [ ...
      0,  0,     0, 1;    % Center of mass
      0,  0, -0.05, 1]';  % Payload
 
-%% ============================================================
+% ============================================================
 % CONTROLLER GAINS
 % ============================================================
 
@@ -79,9 +79,9 @@ drone1_gains = containers.Map( ...
      4.5, 0.0, 0.4, ...  % Pitch PID
      2.0, 0.0, 0.2, ... % Yaw PID
      6.0, 0.1, 0.05, ... % Vertical speed PID
-     [3.5; 3.5; 5.0], [0.8; 0.8; 1.0], [2.5; 2.5; 3.0] });  % P_pos [x, y, z], I_pos [x, y, z], D_pos [x, y, z]
+     [3.7; 3.7; 5.0], [0.93; 0.93; 1.0], [2.6; 2.6; 3.0] });  % P_pos [x, y, z], I_pos [x, y, z], D_pos [x, y, z]
 
-%% ============================================================
+% ============================================================
 % Trajectory Planner
 % ============================================================
 
@@ -94,7 +94,7 @@ currentWP = 2;                  % Index of the current target waypoint (start fr
 wpReached = false(numWP,1);     % Logical array marking which waypoints have been reached
 wpHoverTimer = 0;               % Timer for hovering at waypoints that require a stop
 
-%% ============================================================
+% ============================================================
 % SIMULATION SETUP
 % ============================================================
 
@@ -103,13 +103,13 @@ N = ceil(simulationTime/dt);  % Number of simulation steps (pre‑allocate if ne
 
 t_now = 0;                    % Current simulation time [s]
 t_plan = 0;                   % Current time in the trajectory plan [s] (may pause during hover)
-i = 1;                        % Loop counter
+idx = 1;                        % Loop counter
 
 % Create drone object (custom Drone class) with parameters, initial state, inputs, gains, and simulation time
 drone1 = Drone(drone1_params, drone1_initStates, ...
                drone1_initInputs, drone1_gains, simulationTime);
 
-%% ============================================================
+% ============================================================
 % 3D VISUALIZATION SETUP
 % ============================================================
 
@@ -147,9 +147,89 @@ h24 = plot3(drone1_atti(1,[2 4]), drone1_atti(2,[2 4]), drone1_atti(3,[2 4]), '-
 hpl = plot3(drone1_atti(1,[5 6]), drone1_atti(2,[5 6]), drone1_atti(3,[5 6]), '-k','MarkerSize',3);
 % Shadow/marker at ground projection (will be updated)
 hsh = plot3(0,0,0,'xk','LineWidth',2);
+
+% =========================================================================
+% Compute total mission duration for ideal trajectory plotting
+% =========================================================================
+
+% Sum of all segment durations (time spent moving between waypoints)
+t_total_segments = sum(planner.segmentTimes);
+
+% Sum of all hover durations at waypoints (if any)
+t_total_hover = sum(planner.hoverTime);
+
+% Total real mission time = moving time + hovering time
+t_max_plot = t_total_segments + t_total_hover;
+
+% Create time vector for sampling the ideal trajectory (0.1 s resolution)
+t_samples = 0:0.1:t_max_plot;
+
+% Pre-allocate array to store ideal (reference) positions over time
+X_ideal = zeros(length(t_samples), 3);
+
+% -------------------------------------------------------------------------
+% Simulate the planner behavior just for visualization purposes
+% We create a "virtual" t_plan to see what happens in the real loop
+% -------------------------------------------------------------------------
+
+t_plan_virtual     = 0;               % Virtual planning time (like t_plan in main loop)
+current_wp_virtual = 2;               % Start from the second waypoint (index 1 is initial position)
+hover_timer_virtual = 0;              % Virtual hover timer
+
+% Pre-compute cumulative time up to the previous waypoint (used in condition)
+cum_time = sum(planner.segmentTimes(1:current_wp_virtual-1));
+
+for k = 1:length(t_samples)
+    % Get reference position at current virtual time
+    [Xd_temp, ~, ~] = planner.getReference(t_plan_virtual);
+    X_ideal(k,:) = Xd_temp';  % Store X,Y,Z reference position
+    
+    % ---------------------------------------------------------------------
+    % This ensures the plotted reference trajectory behaves the same way
+    % ---------------------------------------------------------------------
+    
+    % Distance from current reference position to the active waypoint
+    dist_to_wp = norm(Xd_temp' - WP(current_wp_virtual, :));
+    
+    if dist_to_wp < 0.01 && current_wp_virtual <= size(WP,1)
+        % Waypoint is considered reached (very tight tolerance)
+        
+        h_time = planner.getHoverTime(current_wp_virtual);  % Hover duration at this waypoint
+        
+        if hover_timer_virtual < h_time
+            % Still hovering - increment hover timer, do NOT advance time
+            hover_timer_virtual = hover_timer_virtual + 0.1;
+        else
+            % Hover finished - advance virtual planning time
+            t_plan_virtual = t_plan_virtual + 0.1;
+            
+            % Safety check: only move to next waypoint if we are really past
+            % the end of the current segment (avoids premature switch)
+            if hover_timer_virtual >= h_time && t_plan_virtual > cum_time
+                current_wp_virtual = min(current_wp_virtual + 1, size(WP,1));
+                hover_timer_virtual = 0;  % Reset hover timer for next waypoint
+                
+                % Update cumulative time for the new active waypoint
+                cum_time = sum(planner.segmentTimes(1:current_wp_virtual-1));
+            end
+        end
+    else
+        % Not yet at waypoint - advance virtual time normally
+        t_plan_virtual = t_plan_virtual + 0.1;
+    end
+end
+
+% Plot the ideal (reference) trajectory as black dashed line in 3D view
+plot3(X_ideal(:,1), X_ideal(:,2), X_ideal(:,3), 'k--', 'LineWidth', 1.2, ...
+      'DisplayName', 'Reference Trajectory');
+
+% Plot the actual waypoints as black filled circles for visual reference
+plot3(WP(:,1), WP(:,2), WP(:,3), 'ko', 'MarkerFaceColor', 'k', ...
+      'MarkerSize', 8, 'DisplayName', 'Waypoints');
+
 hold off;
 
-%% ============================================================
+% ============================================================
 % PLOTS (REFERENCE VS REAL)
 % ============================================================
 
@@ -193,7 +273,7 @@ ylabel('Height [m]');
 h_z     = animatedline('Color','b','LineWidth',1.5);
 h_z_ref = animatedline('Color','k','LineStyle','--','LineWidth',1.2);
 
-%% ============================================================
+% ============================================================
 % MOTOR SPEED PLOTS (RPM)
 % ============================================================
 fig3 = figure('Position',[705 50 810 245], 'Name', 'Motor Speeds');
@@ -206,13 +286,13 @@ h_m3 = animatedline('Color',[0,0.5,0],'LineWidth',1.5,'DisplayName','M3 (RL)'); 
 h_m4 = animatedline('Color','m','LineWidth',1.5,'DisplayName','M4 (RR)');        % Motor 4 (Rear‑Right)
 legend('Location','eastoutside');
 
-%% ============================================================
+% ============================================================
 % POSITION COMMAND (REFERENCE)
 % ============================================================
 
 commandSig = [0; 0; 0; 0];  % Initialize the variable to avoid plot errors (will be overwritten each loop)
 
-%% ============================================================
+% ============================================================
 % MAIN LOOP
 % ============================================================
 
@@ -225,13 +305,13 @@ drone1_state_out = zeros(N,12);        % Pre‑allocate array to store state his
 while true
 
     % --- Time ---
-    t_now = (i-1) * dt;  % Current simulation time
+    t_now = (idx-1) * dt;  % Current simulation time
 
     % ---Get reference from planner at current plan time ---
     [Xd, Vd, Ad] = planner.getReference(t_plan);  % Desired position, velocity, acceleration vectors
 
     % % ===== DEBUG PRINTS =====
-    % if mod(i,100) == 0
+    % if mod(idx,100) == 0
     %     fprintf('t=%.2f | Vd norm=%.4f | Ad norm=%.4f\n', ...
     %             t_now, norm(Vd), norm(Ad));
     % end
@@ -246,14 +326,14 @@ while true
                   drone1.zdot_des];
 
     % --- Dynamics update ---
-    drone1.UpdateState();                   % Integrate drone dynamics one time step
-    drone1_state = drone1.GetState();       % Retrieve updated state
+    drone1.UpdateState();              % Integrate drone dynamics one time step
+    drone1_state = drone1.GetState();  % Retrieve updated state
 
-    drone1_state_out(i,:) = drone1_state';  % Store state history
+    drone1_state_out(idx,:) = drone1_state';  % Store state history
 
     % --- Telemetry ---
-    printInterval = 1.0;   % seconds between console prints
-    if mod(i, round(printInterval/dt)) == 0
+    printInterval = 1.0;  % seconds between console prints
+    if mod(idx, round(printInterval/dt)) == 0
         
         fprintf('-------------------------------------------------\n');
         fprintf('Time: %.1f s\n', t_now);
@@ -275,10 +355,9 @@ while true
 
         % --- Motor Speeds ---
         OmegaRPM = drone1.Omega * RPS2RPM;  % Convert motor speeds to RPM
-        fprintf('Motors RPM: [%4.0f %4.0f %4.0f %4.0f] | Δmax = %.1f RPM\n', ...
+        fprintf('Motors RPM: [%4.0f %4.0f %4.0f %4.0f]\n', ...
                 OmegaRPM(1), OmegaRPM(2), ...
-                OmegaRPM(3), OmegaRPM(4), ...
-                max(OmegaRPM)-min(OmegaRPM));
+                OmegaRPM(3), OmegaRPM(4));
     end
 
     % --- 3D visualization update ---
@@ -335,21 +414,21 @@ while true
     % ============================================================
     inHoverZone = false; 
     if currentWP <= numWP
-        targetWP = WP(currentWP,:)';                    % Current target waypoint coordinates
-        distWP = norm(drone1_state(1:3) - targetWP);    % Distance to waypoint
-        velNorm = norm(drone1_state(4:6));              % Current speed
+        targetWP = WP(currentWP,:)';   % Current target waypoint coordinates
+        distWP = norm(Xd - targetWP);  % Distance from reference to target waypoint
+        velNorm = norm(Vd);            % Reference velocity norm
         
         hoverTimeWP = planner.getHoverTime(currentWP);  % Get hover duration for this waypoint (0 if fly‑through)
         
-        % Dynamic criterion: if hover time > 0, require tighter tolerance (0.5 m and 0.5 m/s)
-        % If fly‑through (hoverTime = 0), use larger radius (1.0 m) to avoid skipping.
+        % Dynamic criterion: if hover time > 0, require tighter tolerance (0.1 m and 0.1 m/s)
+        % If fly‑through (hoverTime = 0), use larger radius (0.1 m) to avoid skipping.
         isReached = false;
         if hoverTimeWP > 0
-            if distWP < 0.5 && velNorm < 0.5  % Tolerance of 0.5 meters and 0.5 m/s
+            if distWP < 0.01 && velNorm < 0.01  % Tolerance of 0.1 meters and 0.1 m/s
                 isReached = true;
             end
         else
-            if distWP < 1.00
+            if distWP < 0.01
                 isReached = true;
             end
         end
@@ -380,7 +459,7 @@ while true
 
     % --- Trajectory clock increment ---
     if ~inHoverZone
-        t_plan = t_plan + dt;               % Advance plan time only when not hovering
+        t_plan = t_plan + dt;  % Advance plan time only when not hovering
     end
  
     % ============================================================
@@ -408,9 +487,9 @@ while true
         break;
     end
 
-    i = i + 1;  % Increment loop counter
+    idx = idx + 1;  % Increment loop counter
 
 end
 
 % Trim the state output to the actual number of steps simulated
-drone1_state_out = drone1_state_out(1:i-1,:);
+drone1_state_out = drone1_state_out(1:idx-1,:);
