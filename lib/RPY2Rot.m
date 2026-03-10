@@ -20,6 +20,8 @@
 %   Reference: See equation on page 17 of the course notes.
 
 function bRi = RPY2Rot(angles)
+    %#codegen
+
     phi = angles(1);    % Roll angle  [rad]
     theta = angles(2);  % Pitch angle [rad]
     psi = angles(3);    % Yaw angle   [rad]
@@ -34,4 +36,5 @@ function bRi = RPY2Rot(angles)
     
     % Combined rotation: R = R_roll * R_pitch * R_yaw
     bRi = R_1 * R_2 * R_3;
+
 end
