@@ -27,6 +27,7 @@
 %   the coefficients.
 
 function coeff = poly5_segment(x0, xf, T)
+    %#codegen
     
     % Constraint matrix A (6x6) for the boundary conditions:
     % Rows 1-3: conditions at t = 0 (position, velocity, acceleration)
@@ -45,3 +46,4 @@ function coeff = poly5_segment(x0, xf, T)
     coeff = A \ b;
 
 end
+
